@@ -7,184 +7,518 @@
 <title>Nafay AI Video Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#081426;color:white;font-family:Arial,sans-serif;padding:22px}
-main{max-width:760px;margin:auto}
-h1{color:#79adff}
-.card{background:#142742;border:1px solid #294366;border-radius:16px;padding:20px;margin:20px 0}
-input,button{padding:12px;border-radius:10px}
-input{width:100%;background:#081426;color:white;border:1px solid #294366}
-button{background:#176bfa;color:white;border:0;cursor:pointer;margin-top:12px}
+body{
+ margin:0;padding:20px;
+ background:#081426;color:#fff;
+ font-family:Arial,sans-serif;
+}
+main{max-width:850px;margin:auto}
+h1{color:#8bb8ff;margin-bottom:8px}
+p{color:#b6c9e5;line-height:1.6}
+a{color:#8bb8ff}
+.card{
+ background:#142742;
+ border:1px solid #304d75;
+ padding:20px;
+ border-radius:18px;
+ margin:18px 0;
+}
+label{display:block;margin:16px 0 8px}
+input,textarea,select{
+ width:100%;padding:12px;
+ border-radius:11px;
+ border:1px solid #41618b;
+ background:#081426;
+ color:white;
+ font:inherit;
+}
+textarea{min-height:115px;resize:vertical}
+button{
+ background:#176bfa;color:white;
+ border:0;border-radius:12px;
+ padding:14px 24px;
+ cursor:pointer;font-weight:bold;
+ margin-top:20px;width:100%;
+}
 button:disabled{opacity:.5;cursor:wait}
-canvas,video{width:100%;border-radius:12px;background:black}
-a{color:#94beff}
-#download{display:none;margin-top:14px}
-#status{color:#a9c8f7}
-
-textarea, select {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0 16px;
-  background: #081426;
-  color: white;
-  border: 1px solid #294366;
-  border-radius: 10px;
-  font-family: Arial, sans-serif;
+canvas,video{
+ width:100%;aspect-ratio:16/9;
+ background:#000;border-radius:12px;
 }
-
-label {
-  display: block;
-  margin-top: 12px;
-  color: #a9c8f7;
+#player{display:none}
+#download{
+ display:none;
+ background:#176bfa;color:white;
+ text-decoration:none;
+ text-align:center;
+ padding:13px;
+ border-radius:10px;
+ margin-top:15px;
 }
+#status{color:#9fceff}
+.small{font-size:13px}
 </style>
 </head>
 <body>
 <main>
+
 <a href="/">← Back to Nafay AI</a>
+
 <h1>✦ Nafay AI Video Studio</h1>
-<p>Create moving videos from your photos — free in your browser.</p>
+<p>
+Make edited videos from your own photos and clips.
+Add instructions, movement, titles and background music.
+</p>
+
 <div class="card">
-<label>Upload photos (JPG, PNG or WEBP)</label>
-<input id="photos" type="file" accept="image/*" multiple>
 
-<label for="videoPrompt">Video Instructions</label>
-<textarea id="videoPrompt" rows="4"
-  placeholder="Robot ki smooth video banao, slow zoom aur left-right movement ho."></textarea>
+<label>Upload Photos or Videos</label>
+<input id="media" type="file"
+ accept="image/*,video/*" multiple>
 
-<label for="animationStyle">Animation Style</label>
-<select id="animationStyle">
-  <option value="zoom">Slow Zoom</option>
-  <option value="pan-left">Move Left</option>
-  <option value="pan-right">Move Right</option>
-  <option value="static">No Movement</option>
+<p class="small">
+You can choose several photos and video clips together.
+</p>
+
+<label>What kind of video do you want?</label>
+<textarea id="prompt"
+ placeholder="Example: Mere school robot ki cinematic video banao. Slow zoom, smooth movement, title aur futuristic music ho."></textarea>
+
+<label>Video Title (Optional)</label>
+<input id="titleText" type="text"
+ placeholder="Example: My STREAM Robot Project">
+
+<label>Animation</label>
+<select id="movement">
+<option value="auto">Auto - Follow Instructions</option>
+<option value="zoom">Slow Zoom</option>
+<option value="left">Move Left</option>
+<option value="right">Move Right</option>
+<option value="none">No Movement</option>
 </select>
 
-<label for="musicFile">Background Music (Optional)</label>
-<input id="musicFile" type="file" accept="audio/*">
+<label>Background Music</label>
+<select id="music">
+<option value="soft">Soft Music</option>
+<option value="space">Space / Futuristic Music</option>
+<option value="none">No Music</option>
+</select>
+
 <button id="make">Create Video</button>
-<p id="status">Select photos to begin.</p>
+
+<p id="status">Upload your media to begin.</p>
+
 </div>
+
 <div class="card">
+<h3>Video Preview</h3>
 <canvas id="canvas" width="640" height="360"></canvas>
-<video id="player" controls playsinline style="display:none"></video>
-<a id="download" download="Nafay-AI-Video.webm">Save Video</a>
+<video id="player" controls playsinline></video>
+<a id="download" download="Nafay-AI-Video.webm">
+Download Video
+</a>
 </div>
+
+<p class="small">
+Note: This studio edits uploaded media. It does not
+generate new AI scenes from text alone.
+</p>
+
 </main>
+
 <script>
-const input=document.getElementById("photos");
+const mediaInput=document.getElementById("media");
+const promptInput=document.getElementById("prompt");
+const titleInput=document.getElementById("titleText");
+const movementInput=document.getElementById("movement");
+const musicInput=document.getElementById("music");
 const button=document.getElementById("make");
-const status=document.getElementById("status");
+const statusBox=document.getElementById("status");
 const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
 const player=document.getElementById("player");
 const download=document.getElementById("download");
-const ctx=canvas.getContext("2d");
-let lastURL=null;
+
+let resultURL=null;
+
+function wait(ms){
+ return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+function getMovement(){
+ const selected=movementInput.value;
+ if(selected!=="auto")return selected;
+
+ const prompt=promptInput.value.toLowerCase();
+
+ if(prompt.includes("left"))return "left";
+ if(prompt.includes("right"))return "right";
+ if(prompt.includes("zoom"))return "zoom";
+ if(prompt.includes("still"))return "none";
+
+ return "zoom";
+}
 
 function loadImage(file){
  return new Promise((resolve,reject)=>{
   const url=URL.createObjectURL(file);
   const img=new Image();
-  img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
-  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Cannot read image"))};
+
+  img.onload=()=>{
+   URL.revokeObjectURL(url);
+   resolve({
+    type:"image",
+    element:img,
+    duration:3
+   });
+  };
+
+  img.onerror=()=>{
+   URL.revokeObjectURL(url);
+   reject(new Error("Image could not be opened"));
+  };
+
   img.src=url;
  });
 }
 
-function draw(img,zoom){
- const w=canvas.width,h=canvas.height;
- const scale=Math.max(w/img.width,h/img.height)*zoom;
- const iw=img.width*scale,ih=img.height*scale;
- ctx.drawImage(img,(w-iw)/2,(h-ih)/2,iw,ih);
+function loadVideo(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file);
+  const video=document.createElement("video");
+
+  video.preload="auto";
+  video.muted=true;
+  video.playsInline=true;
+
+  video.onloadedmetadata=()=>{
+   if(!Number.isFinite(video.duration) ||
+      video.duration<=0){
+    URL.revokeObjectURL(url);
+    reject(new Error("Video duration unavailable"));
+    return;
+   }
+
+   resolve({
+    type:"video",
+    element:video,
+    url:url,
+    duration:Math.min(video.duration,8)
+   });
+  };
+
+  video.onerror=()=>{
+   URL.revokeObjectURL(url);
+   reject(new Error("Video format not supported"));
+  };
+
+  video.src=url;
+  video.load();
+ });
 }
 
-button.onclick=async()=>{
- if(!input.files.length){
-  alert("Please select photos first.");
+function drawCover(element,progress,movement){
+ const cw=canvas.width;
+ const ch=canvas.height;
+
+ const iw=element.videoWidth||element.naturalWidth;
+ const ih=element.videoHeight||element.naturalHeight;
+
+ if(!iw||!ih)return;
+
+ let zoom=1.04;
+ let offsetX=0;
+
+ if(movement==="zoom"){
+  zoom=1.04+progress*0.13;
+ }else if(movement==="left"){
+  zoom=1.17;
+  offsetX=(0.5-progress)*45;
+ }else if(movement==="right"){
+  zoom=1.17;
+  offsetX=(progress-0.5)*45;
+ }
+
+ const scale=Math.max(cw/iw,ch/ih)*zoom;
+ const w=iw*scale;
+ const h=ih*scale;
+
+ ctx.drawImage(
+  element,
+  (cw-w)/2+offsetX,
+  (ch-h)/2,
+  w,h
+ );
+}
+
+function drawTitle(title){
+ if(!title)return;
+
+ const text=title.slice(0,55);
+
+ ctx.fillStyle="rgba(0,0,0,0.55)";
+ ctx.fillRect(0,290,640,70);
+
+ ctx.fillStyle="#ffffff";
+ ctx.font="bold 25px Arial";
+ ctx.textAlign="center";
+ ctx.textBaseline="middle";
+ ctx.fillText(text,320,325,585);
+
+ ctx.textAlign="left";
+}
+
+function drawScene(item,progress,title,movement){
+ ctx.fillStyle="#050b17";
+ ctx.fillRect(0,0,640,360);
+
+ drawCover(item.element,progress,movement);
+
+ if(progress<0.85){
+  drawTitle(title);
+ }
+
+ const fade=Math.min(
+  1,
+  progress/0.10,
+  (1-progress)/0.10
+ );
+
+ ctx.fillStyle="rgba(0,0,0,"+
+  (1-Math.max(0,fade))+")";
+
+ ctx.fillRect(0,0,640,360);
+}
+
+function createMusic(audioContext,destination,length,style){
+ const notes=style==="space"
+  ?[220,277.18,329.63,440,329.63,277.18]
+  :[261.63,329.63,392,329.63];
+
+ const interval=style==="space"?0.65:0.85;
+ const start=audioContext.currentTime+0.1;
+
+ for(let t=0;t<length;t+=interval){
+  const index=Math.floor(t/interval)%notes.length;
+  const osc=audioContext.createOscillator();
+  const volume=audioContext.createGain();
+
+  osc.type=style==="space"?"sine":"triangle";
+  osc.frequency.value=notes[index];
+
+  volume.gain.setValueAtTime(0.0001,start+t);
+  volume.gain.linearRampToValueAtTime(
+   0.035,start+t+0.06
+  );
+  volume.gain.exponentialRampToValueAtTime(
+   0.0001,start+t+Math.min(interval,0.75)
+  );
+
+  osc.connect(volume);
+  volume.connect(destination);
+
+  osc.start(start+t);
+  osc.stop(start+t+Math.min(interval,0.75));
+ }
+}
+
+async function drawClip(item,title,movement){
+ if(item.type==="video"){
+  item.element.currentTime=0;
+  await item.element.play();
+ }
+
+ const start=performance.now();
+ const duration=item.duration*1000;
+
+ await new Promise(resolve=>{
+  function frame(now){
+   const elapsed=Math.min(now-start,duration);
+   const progress=elapsed/duration;
+
+   drawScene(item,progress,title,movement);
+
+   if(elapsed<duration){
+    requestAnimationFrame(frame);
+   }else{
+    resolve();
+   }
+  }
+
+  requestAnimationFrame(frame);
+ });
+
+ if(item.type==="video"){
+  item.element.pause();
+ }
+}
+
+button.addEventListener("click",async()=>{
+ const files=[...mediaInput.files].slice(0,8);
+
+ if(!files.length){
+  alert("Pehle photo ya video upload karein.");
   return;
  }
+
  if(!window.MediaRecorder||!canvas.captureStream){
-  alert("This browser does not support video recording.");
+  alert("Your browser does not support video recording.");
+  return;
+ }
+
+ const supported=MediaRecorder.isTypeSupported(
+  "video/webm;codecs=vp8,opus"
+ );
+
+ const mime=supported
+  ?"video/webm;codecs=vp8,opus"
+  :"video/webm";
+
+ if(!MediaRecorder.isTypeSupported(mime)){
+  alert("WebM video recording is unavailable.");
   return;
  }
 
  button.disabled=true;
- download.style.display="none";
+ button.textContent="Creating Video...";
  player.style.display="none";
- let stream,recorder;
+ canvas.style.display="block";
+ download.style.display="none";
+
+ let items=[];
+ let audioContext=null;
+ let stream=null;
+ let recorder=null;
 
  try{
-  const files=[...input.files].slice(0,12);
-  const images=await Promise.all(files.map(loadImage));
-  stream=canvas.captureStream(15);
-  const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp8")
-    ?"video/webm;codecs=vp8":"video/webm";
-  recorder=new MediaRecorder(stream,{mimeType:mime});
+  statusBox.textContent="Loading your files...";
+
+  items=await Promise.all(
+   files.map(file=>{
+    if(file.type.startsWith("image/")){
+     return loadImage(file);
+    }
+    if(file.type.startsWith("video/")){
+     return loadVideo(file);
+    }
+    throw new Error("Unsupported file type");
+   })
+  );
+
+  const totalDuration=items.reduce(
+   (sum,item)=>sum+item.duration,0
+  );
+
+  const movement=getMovement();
+  const title=titleInput.value.trim();
+
+  stream=canvas.captureStream(20);
+
+  if(musicInput.value!=="none"){
+   const AudioClass=
+    window.AudioContext||window.webkitAudioContext;
+
+   if(AudioClass){
+    audioContext=new AudioClass();
+    const destination=
+     audioContext.createMediaStreamDestination();
+
+    createMusic(
+     audioContext,
+     destination,
+     totalDuration,
+     musicInput.value
+    );
+
+    await audioContext.resume();
+
+    destination.stream.getAudioTracks().forEach(
+     track=>stream.addTrack(track)
+    );
+   }
+  }
+
   const chunks=[];
+
+  recorder=new MediaRecorder(stream,{
+   mimeType:mime,
+   videoBitsPerSecond:1800000
+  });
+
   recorder.ondataavailable=e=>{
-   if(e.data.size)chunks.push(e.data);
+   if(e.data.size>0)chunks.push(e.data);
   };
-  const finished=new Promise(resolve=>recorder.onstop=resolve);
+
+  const finished=new Promise((resolve,reject)=>{
+   recorder.onstop=resolve;
+   recorder.onerror=()=>reject(
+    new Error("Recording failed")
+   );
+  });
+
   recorder.start();
 
-  const duration=images.length*3000;
-  const start=performance.now();
+  for(let i=0;i<items.length;i++){
+   statusBox.textContent=
+    "Creating scene "+(i+1)+" of "+items.length;
 
-  await new Promise(resolve=>{
-   function frame(now){
-    const elapsed=Math.min(now-start,duration);
-    const index=Math.min(Math.floor(elapsed/3000),images.length-1);
-    const progress=(elapsed%3000)/3000;
-
-    ctx.fillStyle="#081426";
-    ctx.fillRect(0,0,640,360);
-  
-const style = document.getElementById("animationStyle").value;
-
-if (style === "static") {
-  draw(images[index], 1);
-} else if (style === "zoom") {
-  draw(images[index], 1 + progress * 0.12);
-} else {
-  const zoom = 1.15;
-  const direction = style === "pan-left" ? -1 : 1;
-  const offset = direction * (progress - 0.5) * 35;
-
-  ctx.save();
-  ctx.translate(offset, 0);
-  draw(images[index], zoom);
-  ctx.restore();
-}
-
-    status.textContent="Creating video: "+
-      Math.round(elapsed/duration*100)+"%";
-
-    if(elapsed<duration)requestAnimationFrame(frame);
-    else resolve();
-   }
-   requestAnimationFrame(frame);
-  });
+   await drawClip(items[i],title,movement);
+  }
 
   recorder.stop();
   await finished;
 
-  const blob=new Blob(chunks,{type:"video/webm"});
-  if(lastURL)URL.revokeObjectURL(lastURL);
-  lastURL=URL.createObjectURL(blob);
+  const blob=new Blob(chunks,{
+   type:recorder.mimeType||"video/webm"
+  });
 
-  player.src=lastURL;
+  if(!blob.size){
+   throw new Error("Video output is empty");
+  }
+
+  if(resultURL){
+   URL.revokeObjectURL(resultURL);
+  }
+
+  resultURL=URL.createObjectURL(blob);
+
+  player.src=resultURL;
   player.style.display="block";
-  download.href=lastURL;
-  download.style.display="inline-block";
-  status.textContent="Video ready! Preview or save it below.";
- }catch(err){
-  status.textContent="Video error: "+err.message;
+  canvas.style.display="none";
+
+  download.href=resultURL;
+  download.style.display="block";
+
+  statusBox.textContent=
+   "Your video is ready! Preview or download it.";
+
+ }catch(error){
+  statusBox.textContent=
+   "Error: "+error.message;
  }finally{
-  if(recorder&&recorder.state==="recording")recorder.stop();
-  if(stream)stream.getTracks().forEach(t=>t.stop());
+  items.forEach(item=>{
+   if(item.type==="video"){
+    item.element.pause();
+    URL.revokeObjectURL(item.url);
+   }
+  });
+
+  if(recorder&&recorder.state==="recording"){
+   recorder.stop();
+  }
+
+  if(stream){
+   stream.getTracks().forEach(track=>track.stop());
+  }
+
+  if(audioContext){
+   await audioContext.close();
+  }
+
   button.disabled=false;
+  button.textContent="Create Video";
  }
-};
+});
 </script>
 </body>
 </html>
-  
