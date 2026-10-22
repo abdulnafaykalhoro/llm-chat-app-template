@@ -183,7 +183,7 @@ async function sendMessage() {
 			"assistant",
 			"Sorry, there was an error processing your request.",
 		);
-	} finally {
+	} finally {saveCurrentChat();
 		// Hide typing indicator
 		typingIndicator.classList.remove("visible");
 
@@ -239,7 +239,9 @@ if (newChatBtn) {
       return;
     }
 
-    chatHistory = [];
+   saveCurrentChat();
+activeChatId = Date.now().toString();
+	  chatHistory = [];
     chatMessages.replaceChildren();
 
     const welcome = document.createElement("div");
@@ -257,4 +259,114 @@ if (newChatBtn) {
     userInput.focus();
   });
 }
-  
+// Nafay AI - Saved Conversations
+const STORAGE_KEY = "nafay-ai-conversations-v1";
+let activeChatId = Date.now().toString();
+
+const historyBtn = document.getElementById("historyBtn");
+const historyPanel = document.getElementById("historyPanel");
+const historyList = document.getElementById("historyList");
+
+function getSavedChats() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("History loading error:", error);
+    return [];
+  }
+}
+
+function saveCurrentChat() {
+  const messages = chatHistory.filter(
+    m => m.role === "user" || m.role === "assistant"
+  ).map(m => ({ role: m.role, content: m.content }));
+
+  if (!messages.some(m => m.role === "user")) return;
+
+  const title = messages.find(m => m.role === "user")
+    ?.content.slice(0, 45) || "New Conversation";
+
+  const chats = getSavedChats().filter(c => c.id !== activeChatId);
+  chats.unshift({
+    id: activeChatId,
+    title,
+    messages,
+    updatedAt: Date.now()
+  });
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats.slice(0, 30)));
+  } catch (error) {
+    console.error("Unable to save chat:", error);
+  }
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!historyList) return;
+  historyList.replaceChildren();
+
+  const chats = getSavedChats();
+  if (!chats.length) {
+    historyList.textContent = "No saved conversations yet.";
+    return;
+  }
+
+  chats.forEach(c => {
+    const row = document.createElement("div");
+    const open = document.createElement("button");
+    open.type = "button";
+    open.textContent = c.title;
+    open.addEventListener("click", () => {
+      if (isProcessing) return;
+      saveCurrentChat();
+      activeChatId = c.id;
+      chatHistory = c.messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      chatMessages.replaceChildren();
+      chatHistory.forEach(m => {
+        const el = document.createElement("div");
+        el.className = "message " + m.role + "-message";
+        const p = document.createElement("p");
+        p.textContent = m.content;
+        el.appendChild(p);
+        chatMessages.appendChild(el);
+      });
+
+      historyPanel.hidden = true;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "Delete";
+    del.style.width = "auto";
+    del.addEventListener("click", () => {
+      if (isProcessing) return;
+      const remaining = getSavedChats().filter(x => x.id !== c.id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+      renderHistory();
+    });
+
+    row.append(open, del);
+    historyList.appendChild(row);
+  });
+}
+
+if (historyBtn && historyPanel) {
+  historyBtn.addEventListener("click", () => {
+    if (!historyPanel.hidden) {
+      historyPanel.hidden = true;
+    } else {
+      saveCurrentChat();
+      renderHistory();
+      historyPanel.hidden = false;
+    }
+  });
+}
+
+renderHistory();  
