@@ -305,162 +305,149 @@
 		<!-- Chat app script -->
 		<script src="chat.js"></script>
 	
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const plusBtn = document.getElementById("plusBtn");
+  const plus = document.getElementById("plusBtn");
   const menu = document.getElementById("attachMenu");
-  const uploadBtn = document.getElementById("uploadBtn");
+  const upload = document.getElementById("uploadBtn");
   const imageBtn = document.getElementById("createImageBtn");
   const videoBtn = document.getElementById("createVideoBtn");
   const fileInput = document.getElementById("fileInput");
-  const textInput = document.getElementById("user-input");
+  const chat = document.getElementById("chat-messages");
 
-  if (!plusBtn || !menu) return;
+  if (!plus || !menu || !chat) {
+    console.error("Nafay AI: Required elements missing");
+    return;
+  }
 
-  plusBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
+  // Open or close the Plus menu
+  plus.addEventListener("click", (e) => {
+    e.stopPropagation();
     menu.hidden = !menu.hidden;
   });
 
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest(".attach-wrapper")) {
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".attach-wrapper")) {
       menu.hidden = true;
     }
   });
 
-  uploadBtn.addEventListener("click", () => {
+  // Upload files
+  upload.addEventListener("click", () => {
     menu.hidden = true;
     fileInput.click();
   });
 
   fileInput.addEventListener("change", () => {
-    const file = fileInput.files[0];
+    const file = fileInput.files?.[0];
     if (!file) return;
-    alert("Selected: " + file.name +
-      "\nAI file analysis is not connected yet.");
+
+    alert(
+      "Selected: " + file.name +
+      "\nAI file analysis is not connected yet."
+    );
+    fileInput.value = "";
   });
 
-  
+  // Image styles
+  const stylePrompts = {
+    auto: "",
+    realistic:
+      "Photorealistic DSLR photograph, natural light, " +
+      "realistic textures, no CGI, no cartoon. ",
+    "3d":
+      "Professional cinematic 3D rendering, detailed " +
+      "materials and realistic lighting. ",
+    cartoon:
+      "Colorful cartoon illustration, expressive design. ",
+    anime:
+      "Detailed anime illustration, vibrant colors. ",
+    poster:
+      "Professional creative poster, bold composition. "
+  };
 
-imageBtn.addEventListener("click", async () => {
-  menu.hidden = true;
+  // Create a real image
+  imageBtn.addEventListener("click", async () => {
+    menu.hidden = true;
 
-  const description = window.prompt(
-    "Nafay AI: Aap kis cheez ki image banana chahte hain?"
-  );
+    const description = window.prompt(
+      "Nafay AI: Kis cheez ki image banani hai?"
+    );
 
-  if (!description || !description.trim()) return;
+    if (!description?.trim()) return;
 
-  const chat = document.querySelector(".chat-messages") ||
-    document.getElementById("chat-messages") ||
-    document.getElementById("messages");
+    const style =
+      document.getElementById("imageStyle")?.value || "auto";
 
-  if (!chat) {
-    alert("Chat container nahi mila. HTML ka message container check karein.");
-    return;
-  }
+    const finalPrompt =
+      (stylePrompts[style] || "") + description.trim();
 
-  const box = document.createElement("div");
-  box.className = "message assistant-message";
+    const box = document.createElement("div");
+    box.className = "message assistant-message";
 
-  const status = document.createElement("p");
-  status.textContent = "Nafay AI image bana raha hai...";
-  box.appendChild(status);
-  chat.appendChild(box);
-  chat.scrollTop = chat.scrollHeight;
+    const status = document.createElement("p");
+    status.textContent = "Nafay AI image bana raha hai...";
+    box.appendChild(status);
+    chat.appendChild(box);
 
-  imageBtn.disabled = true;
+    imageBtn.disabled = true;
 
-  try {
-   
-const stylePrompts = {
-  auto: "",
-  realistic: "Photorealistic DSLR photography, natural lighting, authentic textures, lifelike details, no CGI, no cartoon. ",
-  "3d": "High-quality cinematic 3D render, realistic materials, detailed lighting, professional 3D composition. ",
-  cartoon: "Colorful cartoon illustration, expressive characters, clean outlines, playful design. ",
-  anime: "Beautiful anime illustration, detailed anime art, vibrant colors, cinematic composition. ",
-  poster: "Professional creative poster design, bold composition, attractive typography, high visual impact. "
-};
-   const response = await fetch("/api/create-image", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-      
-prompt: (stylePrompts[
-  document.getElementById("imageStyle").value
-] || "") + description.trim()
-  ] || "") + description.trim()
-}),
-});
+    try {
+      const response = await fetch("/api/create-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt: finalPrompt
+        })
+      });
 
-const data = await response.json();
-      })
-    });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (!response.ok || !data.image) {
+        throw new Error(
+          data.error || "Image generation failed"
+        );
+      }
 
-    if (!response.ok || !data.image) {
-      throw new Error(
-        data.error || "Image generate nahi hui."
-      );
+      status.textContent = "Generated Image:";
+
+      const img = document.createElement("img");
+      img.src = data.image;
+      img.alt = description;
+      img.style.cssText =
+        "max-width:100%;border-radius:12px;margin-top:10px";
+      box.appendChild(img);
+
+      const link = document.createElement("a");
+      link.href = data.image;
+      link.download = "nafay-ai-image.jpg";
+      link.textContent = "Download Image";
+      link.style.cssText =
+        "display:block;color:#76B2FF;margin-top:10px";
+      box.appendChild(link);
+
+    } catch (error) {
+      status.textContent =
+        "Image error: " + error.message;
+    } finally {
+      imageBtn.disabled = false;
+      chat.scrollTop = chat.scrollHeight;
     }
+  });
 
-    status.textContent = "Aapki generated image:";
-
-    const img = document.createElement("img");
-    img.src = data.image;
-    img.alt = description;
-    img.style.cssText =
-      "max-width:100%;border-radius:12px;margin-top:10px;";
-    box.appendChild(img);
-
-    const link = document.createElement("a");
-    link.href = data.image;
-    link.download = "nafay-ai-image.jpg";
-    link.textContent = "Download Image";
-    link.style.cssText =
-      "display:block;color:#76B2FF;margin-top:10px;";
-    box.appendChild(link);
-
-  } catch (error) {
-    status.textContent =
-      "Image error: " + error.message;
-  } finally {
-    imageBtn.disabled = false;
-    chat.scrollTop = chat.scrollHeight;
-  }
-});
-  
-
+  // Video placeholder
   videoBtn.addEventListener("click", () => {
     menu.hidden = true;
-    textInput.placeholder =
-      "Describe the video you want to create...";
-    textInput.focus();
-    alert("Video generation is not connected yet.");
+    alert(
+      "Real AI video generation is not connected yet."
+    );
   });
 });
 </script>
-  
-<script>
-(() => {
-  const plus = document.getElementById("plusBtn");
-  const menu = document.getElementById("attachMenu");
 
-  if (!plus || !menu) {
-    console.error("Nafay AI: Plus menu elements missing");
-    return;
-  }
-
-  plus.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    menu.hidden = !menu.hidden;
-  }, true);
-})();
-</script>
-  </body>
+ 
+</body>
 </html>
