@@ -631,11 +631,12 @@ fileInput.addEventListener("change", () => {
   });
 
   // Video placeholder
-  videoBtn.addEventListener("click", () => {
-    menu.hidden = true;
-    alert(
-      "Real AI video generation is not connected yet."
-    );
+ 
+videoBtn.addEventListener("click", () => {
+  menu.hidden = true;
+  window.location.href = "/video.html";
+});
+  
   });
 });
 </script>
