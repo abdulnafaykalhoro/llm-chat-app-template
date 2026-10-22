@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nafay AI Video Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#081426;color:white;font-family:Arial,sans-serif;padding:22px}
+main{max-width:760px;margin:auto}
+h1{color:#79adff}
+.card{background:#142742;border:1px solid #294366;border-radius:16px;padding:20px;margin:20px 0}
+input,button{padding:12px;border-radius:10px}
+input{width:100%;background:#081426;color:white;border:1px solid #294366}
+button{background:#176bfa;color:white;border:0;cursor:pointer;margin-top:12px}
+button:disabled{opacity:.5;cursor:wait}
+canvas,video{width:100%;border-radius:12px;background:black}
+a{color:#94beff}
+#download{display:none;margin-top:14px}
+#status{color:#a9c8f7}
+</style>
+</head>
+<body>
+<main>
+<a href="/">← Back to Nafay AI</a>
+<h1>✦ Nafay AI Video Studio</h1>
+<p>Create moving videos from your photos — free in your browser.</p>
+<div class="card">
+<label>Upload photos (JPG, PNG or WEBP)</label>
+<input id="photos" type="file" accept="image/*" multiple>
+<button id="make">Create Video</button>
+<p id="status">Select photos to begin.</p>
+</div>
+<div class="card">
+<canvas id="canvas" width="640" height="360"></canvas>
+<video id="player" controls playsinline style="display:none"></video>
+<a id="download" download="Nafay-AI-Video.webm">Save Video</a>
+</div>
+</main>
+<script>
+const input=document.getElementById("photos");
+const button=document.getElementById("make");
+const status=document.getElementById("status");
+const canvas=document.getElementById("canvas");
+const player=document.getElementById("player");
+const download=document.getElementById("download");
+const ctx=canvas.getContext("2d");
+let lastURL=null;
+
+function loadImage(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Cannot read image"))};
+  img.src=url;
+ });
+}
+
+function draw(img,zoom){
+ const w=canvas.width,h=canvas.height;
+ const scale=Math.max(w/img.width,h/img.height)*zoom;
+ const iw=img.width*scale,ih=img.height*scale;
+ ctx.drawImage(img,(w-iw)/2,(h-ih)/2,iw,ih);
+}
+
+button.onclick=async()=>{
+ if(!input.files.length){
+  alert("Please select photos first.");
+  return;
+ }
+ if(!window.MediaRecorder||!canvas.captureStream){
+  alert("This browser does not support video recording.");
+  return;
+ }
+
+ button.disabled=true;
+ download.style.display="none";
+ player.style.display="none";
+ let stream,recorder;
+
+ try{
+  const files=[...input.files].slice(0,12);
+  const images=await Promise.all(files.map(loadImage));
+  stream=canvas.captureStream(15);
+  const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp8")
+    ?"video/webm;codecs=vp8":"video/webm";
+  recorder=new MediaRecorder(stream,{mimeType:mime});
+  const chunks=[];
+  recorder.ondataavailable=e=>{
+   if(e.data.size)chunks.push(e.data);
+  };
+  const finished=new Promise(resolve=>recorder.onstop=resolve);
+  recorder.start();
+
+  const duration=images.length*3000;
+  const start=performance.now();
+
+  await new Promise(resolve=>{
+   function frame(now){
+    const elapsed=Math.min(now-start,duration);
+    const index=Math.min(Math.floor(elapsed/3000),images.length-1);
+    const progress=(elapsed%3000)/3000;
+
+    ctx.fillStyle="#081426";
+    ctx.fillRect(0,0,640,360);
+    draw(images[index],1+progress*.12);
+
+    status.textContent="Creating video: "+
+      Math.round(elapsed/duration*100)+"%";
+
+    if(elapsed<duration)requestAnimationFrame(frame);
+    else resolve();
+   }
+   requestAnimationFrame(frame);
+  });
+
+  recorder.stop();
+  await finished;
+
+  const blob=new Blob(chunks,{type:"video/webm"});
+  if(lastURL)URL.revokeObjectURL(lastURL);
+  lastURL=URL.createObjectURL(blob);
+
+  player.src=lastURL;
+  player.style.display="block";
+  download.href=lastURL;
+  download.style.display="inline-block";
+  status.textContent="Video ready! Preview or save it below.";
+ }catch(err){
+  status.textContent="Video error: "+err.message;
+ }finally{
+  if(recorder&&recorder.state==="recording")recorder.stop();
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  button.disabled=false;
+ }
+};
+</script>
+</body>
+</html>
+  
