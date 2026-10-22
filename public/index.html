@@ -507,53 +507,40 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.click();
   });
 
+  
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
   if (!file) return;
 
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-    alert("Filhal JPG, PNG ya WEBP photo select karein.");
+    alert("Sirf JPG, PNG ya WEBP image upload karein.");
     fileInput.value = "";
     return;
   }
 
   if (file.size > 3 * 1024 * 1024) {
-    alert("Photo 3 MB se chhoti honi chahiye.");
+    alert("Image 3 MB se chhoti honi chahiye.");
     fileInput.value = "";
     return;
   }
-
-  const chatBox = document.getElementById("chat-messages");
-  if (!chatBox) return;
 
   const preview = document.createElement("div");
   preview.className = "message user-message";
 
   const img = document.createElement("img");
   img.src = URL.createObjectURL(file);
-  img.alt = "Selected photo";
+  img.alt = file.name;
   img.style.cssText =
     "max-width:250px;width:100%;border-radius:12px;";
 
   img.onload = () => URL.revokeObjectURL(img.src);
 
-  const label = document.createElement("p");
-  label.textContent = "Selected photo: " + file.name;
+  preview.appendChild(img);
+  chat.appendChild(preview);
+  chat.scrollTop = chat.scrollHeight;
 
-  preview.append(img, label);
-  chatBox.appendChild(preview);
-  chatBox.scrollTop = chatBox.scrollHeight;
-
-  alert("Photo preview ready. AI photo editing abhi connect karna hai.");
+  fileInput.value = "";
 });
-  
-
-    alert(
-      "Selected: " + file.name +
-      "\nAI file analysis is not connected yet."
-    );
-    fileInput.value = "";
-  });
 
   // Image styles
   const stylePrompts = {
