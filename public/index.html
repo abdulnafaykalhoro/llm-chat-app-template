@@ -239,7 +239,75 @@
     align-items: stretch;
   }
 }
-  </style>
+
+/* Nafay AI - New Chat and History */
+.chat-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  max-width: 768px;
+  margin: 15px auto;
+  padding: 0 12px;
+}
+
+.chat-controls button {
+  flex: 1;
+  padding: 12px;
+  background: #176BFA;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-controls button:hover {
+  background: #0952D4;
+}
+
+#historyPanel {
+  max-width: 768px;
+  margin: 10px auto;
+  padding: 16px;
+  background: #142742;
+  border: 1px solid #294366;
+  border-radius: 14px;
+  color: #FFFFFF;
+}
+
+#historyPanel[hidden] {
+  display: none !important;
+}
+
+#historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#historyList button {
+  width: 100%;
+  padding: 12px;
+  background: #081426;
+  color: #FFFFFF;
+  border: 1px solid #294366;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .chat-controls {
+    gap: 8px;
+  }
+
+  .chat-controls button {
+    font-size: 13px;
+    padding: 10px;
+  }
+}
+    </style>
 	</head>
 	<body>
 		<header>
@@ -249,6 +317,20 @@
   
 			</header>
 
+<div class="chat-controls">
+  <button type="button" id="newChatBtn">
+    + New Chat
+  </button>
+  <button type="button" id="historyBtn">
+    Chat History
+  </button>
+</div>
+
+<div id="historyPanel" hidden>
+  <h3>Previous Conversations</h3>
+  <div id="historyList"></div>
+</div>
+  
 		<div class="chat-container">
 			<div id="chat-messages" class="chat-messages">
 				<div class="message assistant-message">
