@@ -288,13 +288,82 @@ document.addEventListener("DOMContentLoaded", () => {
       "\nAI file analysis is not connected yet.");
   });
 
-  imageBtn.addEventListener("click", () => {
-    menu.hidden = true;
-    textInput.placeholder =
-      "Describe the image you want to create...";
-    textInput.focus();
-    alert("Image generation will be connected in the next step.");
-  });
+  
+
+imageBtn.addEventListener("click", async () => {
+  menu.hidden = true;
+
+  const description = window.prompt(
+    "Nafay AI: Aap kis cheez ki image banana chahte hain?"
+  );
+
+  if (!description || !description.trim()) return;
+
+  const chat = document.querySelector(".chat-messages") ||
+    document.getElementById("chat-messages") ||
+    document.getElementById("messages");
+
+  if (!chat) {
+    alert("Chat container nahi mila. HTML ka message container check karein.");
+    return;
+  }
+
+  const box = document.createElement("div");
+  box.className = "message assistant-message";
+
+  const status = document.createElement("p");
+  status.textContent = "Nafay AI image bana raha hai...";
+  box.appendChild(status);
+  chat.appendChild(box);
+  chat.scrollTop = chat.scrollHeight;
+
+  imageBtn.disabled = true;
+
+  try {
+    const response = await fetch("/api/create-image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: description.trim()
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.image) {
+      throw new Error(
+        data.error || "Image generate nahi hui."
+      );
+    }
+
+    status.textContent = "Aapki generated image:";
+
+    const img = document.createElement("img");
+    img.src = data.image;
+    img.alt = description;
+    img.style.cssText =
+      "max-width:100%;border-radius:12px;margin-top:10px;";
+    box.appendChild(img);
+
+    const link = document.createElement("a");
+    link.href = data.image;
+    link.download = "nafay-ai-image.jpg";
+    link.textContent = "Download Image";
+    link.style.cssText =
+      "display:block;color:#76B2FF;margin-top:10px;";
+    box.appendChild(link);
+
+  } catch (error) {
+    status.textContent =
+      "Image error: " + error.message;
+  } finally {
+    imageBtn.disabled = false;
+    chat.scrollTop = chat.scrollHeight;
+  }
+});
+  
 
   videoBtn.addEventListener("click", () => {
     menu.hidden = true;
