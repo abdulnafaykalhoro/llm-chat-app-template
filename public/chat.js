@@ -228,3 +228,33 @@ function consumeSseEvents(buffer) {
 	}
 	return { events, buffer: normalized };
 }
+
+ // Nafay AI - New Chat Button
+const newChatBtn = document.getElementById("newChatBtn");
+
+if (newChatBtn) {
+  newChatBtn.addEventListener("click", () => {
+    if (isProcessing) {
+      alert("Pehle AI ka current jawab complete hone dein.");
+      return;
+    }
+
+    chatHistory = [];
+    chatMessages.replaceChildren();
+
+    const welcome = document.createElement("div");
+    welcome.className = "message assistant-message";
+
+    const message = document.createElement("p");
+    message.textContent =
+      "Assalamualaikum! Main Nafay AI hoon. Aapki kya madad kar sakta hoon?";
+
+    welcome.appendChild(message);
+    chatMessages.appendChild(welcome);
+
+    userInput.value = "";
+    userInput.style.height = "auto";
+    userInput.focus();
+  });
+}
+  
