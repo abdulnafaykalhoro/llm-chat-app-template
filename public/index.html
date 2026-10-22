@@ -263,7 +263,13 @@
 
 			
 
-<div class="style-selector-wrap">
+
+<div class="message-input">
+  <div class="attach-wrapper">
+    <button type="button" id="plusBtn" aria-label="More options">+</button>
+    <div id="attachMenu" hidden>
+      <button type="button" id="uploadBtn">Upload</button>
+      <div class="style-selector-wrap">
   <label for="imageStyle">Image Style</label>
   <select id="imageStyle">
     <option value="auto">Auto</option>
@@ -273,13 +279,7 @@
     <option value="anime">Anime</option>
     <option value="poster">Poster</option>
   </select>
-</div>
-<div class="message-input">
-  <div class="attach-wrapper">
-    <button type="button" id="plusBtn" aria-label="More options">+</button>
-    <div id="attachMenu" hidden>
-      <button type="button" id="uploadBtn">Upload</button>
-      <button type="button" id="createImageBtn">Create Image</button>
+</div><button type="button" id="createImageBtn">Create Image</button>
       <button type="button" id="createVideoBtn">Create Video</button>
     </div>
   </div>
