@@ -199,6 +199,46 @@
   flex: 1;
   min-width: 0;
 }
+  
+/* Nafay AI Image Style Selector */
+.style-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 10px;
+  padding: 10px 12px;
+  background: #0f1b2d;
+  border: 1px solid #294366;
+  border-radius: 12px;
+}
+
+.style-selector-wrap label {
+  color: #B8CCE9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#imageStyle {
+  flex: 1;
+  min-width: 0;
+  background: #081426;
+  color: #F5F9FF;
+  border: 1px solid #294366;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+#imageStyle:focus {
+  outline: 2px solid #176BFA;
+}
+
+@media (max-width: 480px) {
+  .style-selector-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
   </style>
 	</head>
 	<body>
@@ -222,6 +262,18 @@
 			</div>
 
 			
+
+<div class="style-selector-wrap">
+  <label for="imageStyle">Image Style</label>
+  <select id="imageStyle">
+    <option value="auto">Auto</option>
+    <option value="realistic">Realistic Photo</option>
+    <option value="3d">3D Render</option>
+    <option value="cartoon">Cartoon</option>
+    <option value="anime">Anime</option>
+    <option value="poster">Poster</option>
+  </select>
+</div>
 <div class="message-input">
   <div class="attach-wrapper">
     <button type="button" id="plusBtn" aria-label="More options">+</button>
@@ -320,13 +372,30 @@ imageBtn.addEventListener("click", async () => {
   imageBtn.disabled = true;
 
   try {
-    const response = await fetch("/api/create-image", {
+   
+const stylePrompts = {
+  auto: "",
+  realistic: "Photorealistic DSLR photography, natural lighting, authentic textures, lifelike details, no CGI, no cartoon. ",
+  "3d": "High-quality cinematic 3D render, realistic materials, detailed lighting, professional 3D composition. ",
+  cartoon: "Colorful cartoon illustration, expressive characters, clean outlines, playful design. ",
+  anime: "Beautiful anime illustration, detailed anime art, vibrant colors, cinematic composition. ",
+  poster: "Professional creative poster design, bold composition, attractive typography, high visual impact. "
+};
+   const response = await fetch("/api/create-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        prompt: description.trim()
+      
+prompt: (stylePrompts[
+  document.getElementById("imageStyle").value
+] || "") + description.trim()
+  ] || "") + description.trim()
+}),
+});
+
+const data = await response.json();
       })
     });
 
