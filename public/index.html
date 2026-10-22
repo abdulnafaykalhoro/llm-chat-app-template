@@ -443,5 +443,24 @@ const data = await response.json();
   });
 });
 </script>
+  
+<script>
+(() => {
+  const plus = document.getElementById("plusBtn");
+  const menu = document.getElementById("attachMenu");
+
+  if (!plus || !menu) {
+    console.error("Nafay AI: Plus menu elements missing");
+    return;
+  }
+
+  plus.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    menu.hidden = !menu.hidden;
+  }, true);
+})();
+</script>
   </body>
 </html>
