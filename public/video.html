@@ -19,6 +19,23 @@ canvas,video{width:100%;border-radius:12px;background:black}
 a{color:#94beff}
 #download{display:none;margin-top:14px}
 #status{color:#a9c8f7}
+
+textarea, select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0 16px;
+  background: #081426;
+  color: white;
+  border: 1px solid #294366;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  color: #a9c8f7;
+}
 </style>
 </head>
 <body>
@@ -29,6 +46,21 @@ a{color:#94beff}
 <div class="card">
 <label>Upload photos (JPG, PNG or WEBP)</label>
 <input id="photos" type="file" accept="image/*" multiple>
+
+<label for="videoPrompt">Video Instructions</label>
+<textarea id="videoPrompt" rows="4"
+  placeholder="Robot ki smooth video banao, slow zoom aur left-right movement ho."></textarea>
+
+<label for="animationStyle">Animation Style</label>
+<select id="animationStyle">
+  <option value="zoom">Slow Zoom</option>
+  <option value="pan-left">Move Left</option>
+  <option value="pan-right">Move Right</option>
+  <option value="static">No Movement</option>
+</select>
+
+<label for="musicFile">Background Music (Optional)</label>
+<input id="musicFile" type="file" accept="audio/*">
 <button id="make">Create Video</button>
 <p id="status">Select photos to begin.</p>
 </div>
@@ -105,7 +137,23 @@ button.onclick=async()=>{
 
     ctx.fillStyle="#081426";
     ctx.fillRect(0,0,640,360);
-    draw(images[index],1+progress*.12);
+  
+const style = document.getElementById("animationStyle").value;
+
+if (style === "static") {
+  draw(images[index], 1);
+} else if (style === "zoom") {
+  draw(images[index], 1 + progress * 0.12);
+} else {
+  const zoom = 1.15;
+  const direction = style === "pan-left" ? -1 : 1;
+  const offset = direction * (progress - 0.5) * 35;
+
+  ctx.save();
+  ctx.translate(offset, 0);
+  draw(images[index], zoom);
+  ctx.restore();
+}
 
     status.textContent="Creating video: "+
       Math.round(elapsed/duration*100)+"%";
