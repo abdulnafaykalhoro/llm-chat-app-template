@@ -3,254 +3,115 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nafay AI - Video Generator</title>
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>Nafay AI - Real Video Studio</title>
+
 <style>
-*{box-sizing:border-box}
+*{
+ box-sizing:border-box;
+}
+
 body{
  margin:0;
- padding:20px;
- background:#071323;
- color:#fff;
+ background:#071426;
+ color:white;
  font-family:Arial,sans-serif;
 }
-main{max-width:850px;margin:auto}
-h1{color:#7db5ff;margin-bottom:8px}
-p{color:#afc5e1;line-height:1.6}
-a{color:#8ab9ff}
-.panel{
- background:#122641;
- border:1px solid #294b78;
- padding:22px;
- border-radius:18px;
- margin-top:20px;
+
+header{
+ background:#102748;
+ padding:18px;
+ border-bottom:1px solid #294f86;
 }
-label{
- display:block;
- margin:17px 0 8px;
- font-weight:bold;
-}
-input,textarea,select{
- display:block;
- width:100%;
- padding:13px;
- background:#08182d;
- color:white;
- border:1px solid #436494;
- border-radius:10px;
- font:inherit;
-}
-textarea{min-height:135px;resize:vertical}
-button{
- width:100%;
- margin-top:20px;
- padding:15px;
- background:#176bfa;
- color:white;
- border:none;
- border-radius:12px;
- font-size:16px;
- font-weight:bold;
- cursor:pointer;
-}
-button:disabled{opacity:.5;cursor:wait}
-#preview{
- display:none;
- width:100%;
- max-height:300px;
- object-fit:contain;
- margin-top:15px;
- border-radius:12px;
-}
-#result{
- display:none;
- width:100%;
- margin-top:15px;
- border-radius:12px;
- background:black;
-}
-#download{
- display:none;
- padding:12px;
- text-align:center;
- margin-top:15px;
- border-radius:10px;
- background:#176bfa;
- color:white;
+
+header a{
+ color:#a4caff;
  text-decoration:none;
 }
-#status{white-space:pre-wrap}
-.note{font-size:13px}
+
+main{
+ max-width:1100px;
+ margin:auto;
+ padding:20px;
+}
+
+h1{
+ color:#83b7ff;
+}
+
+p{
+ color:#c1d4ee;
+ line-height:1.6;
+}
+
+.studio{
+ background:#10233d;
+ border:1px solid #335787;
+ border-radius:18px;
+ overflow:hidden;
+ margin-top:20px;
+}
+
+iframe{
+ display:block;
+ width:100%;
+ height:950px;
+ border:0;
+ background:#10233d;
+}
+
+.note{
+ margin-top:16px;
+ padding:15px;
+ background:#132a49;
+ border-radius:12px;
+}
+
+@media(max-width:600px){
+ iframe{
+  height:1100px;
+ }
+}
 </style>
 </head>
+
 <body>
-<main>
+
+<header>
 <a href="/">← Back to Nafay AI</a>
+</header>
 
-<h1>✦ Nafay AI Video Generator</h1>
-<p>Describe your idea and create real AI video.</p>
+<main>
 
-<div class="panel">
+<h1>✦ Nafay AI Video Studio</h1>
 
-<label>Video Type</label>
-<select id="mode">
-<option value="image">Image to Video</option>
-<option value="text">Text to Video</option>
-</select>
-
-<div id="imageArea">
-<label>Upload Your Photo or Robot Image</label>
-<input id="imageInput"
- type="file"
- accept="image/png,image/jpeg,image/webp">
-<img id="preview" alt="Image preview">
-</div>
-
-<label>Describe Your Video</label>
-<textarea id="prompt"
- placeholder="Example: Make this robot dance naturally. Move arms and legs. Fixed camera. No zoom. Realistic movement."></textarea>
-
-<label>Background / Scene</label>
-<input id="background"
- placeholder="Example: Futuristic school science exhibition">
-
-<button id="generate">Generate AI Video</button>
-
-<p id="status">
-Real AI video service must be connected before generation.
+<p>
+Create real AI motion videos using
+your image and text instructions.
 </p>
 
+<div class="studio">
+
+<iframe
+ src="https://deeprat-ltx-video-zerogpu-optimized.hf.space"
+ title="AI Video Generator"
+ allow="fullscreen"
+ loading="lazy">
+</iframe>
+
 </div>
 
-<div class="panel">
-<h3>Generated Video</h3>
-<video id="result" controls playsinline></video>
-<a id="download" download="Nafay-AI-Video.mp4">
-Download Video
-</a>
-<p class="note">
-Real video generation requires a connected AI model.
-No fake slideshow or zoom animation is used.
+<div class="note">
+<p>
+Powered by LTX Video on Hugging Face ZeroGPU.
+Free usage is limited by the provider's
+daily GPU quota and availability.
 </p>
 </div>
 
 </main>
-<script>
-const mode=document.getElementById("mode");
-const imageArea=document.getElementById("imageArea");
-const imageInput=document.getElementById("imageInput");
-const preview=document.getElementById("preview");
-const promptBox=document.getElementById("prompt");
-const background=document.getElementById("background");
-const button=document.getElementById("generate");
-const statusBox=document.getElementById("status");
-const result=document.getElementById("result");
-const download=document.getElementById("download");
 
-let previewURL=null;
-let videoURL=null;
-
-mode.addEventListener("change",()=>{
- imageArea.style.display=
-  mode.value==="image"?"block":"none";
-});
-
-imageInput.addEventListener("change",()=>{
- const file=imageInput.files[0];
-
- if(previewURL){
-  URL.revokeObjectURL(previewURL);
-  previewURL=null;
- }
-
- if(!file){
-  preview.style.display="none";
-  return;
- }
-
- previewURL=URL.createObjectURL(file);
- preview.src=previewURL;
- preview.style.display="block";
-});
-
-button.addEventListener("click",async()=>{
- const prompt=promptBox.value.trim();
-
- if(!prompt){
-  alert("Please enter your video instructions.");
-  return;
- }
-
- if(mode.value==="image"&&!imageInput.files[0]){
-  alert("Please upload an image.");
-  return;
- }
-
- const form=new FormData();
- form.append("mode",mode.value);
- form.append("prompt",prompt);
- form.append("background",background.value.trim());
-
- if(mode.value==="image"){
-  form.append("image",imageInput.files[0]);
- }
-
- button.disabled=true;
- statusBox.textContent="Checking AI video service...";
- result.style.display="none";
- download.style.display="none";
-
- try{
-  const response=await fetch("/api/create-video",{
-   method:"POST",
-   body:form
-  });
-
-  if(!response.ok){
-   let message="AI video service is not ready.";
-   try{
-    const error=await response.json();
-    message=error.error||message;
-   }catch(e){}
-   throw new Error(message);
-  }
-
-  const type=response.headers.get("content-type")||"";
-
-  if(!type.startsWith("video/")){
-   throw new Error(
-    "Backend must return a real video file."
-   );
-  }
-
-  const blob=await response.blob();
-
-  if(!blob.size){
-   throw new Error("Video file is empty.");
-  }
-
-  if(videoURL)URL.revokeObjectURL(videoURL);
-  videoURL=URL.createObjectURL(blob);
-
-  result.src=videoURL;
-  result.style.display="block";
-
-  download.href=videoURL;
-  download.download=type.includes("webm")
-   ?"Nafay-AI-Video.webm"
-   :"Nafay-AI-Video.mp4";
-  download.style.display="block";
-
-  statusBox.textContent="AI video ready!";
-
- }catch(error){
-  statusBox.textContent=
-   "Video generate nahi hui: "+error.message+
-   "\nBackend AI model connection zaroori hai.";
- }finally{
-  button.disabled=false;
- }
-});
-</script>
 </body>
 </html>
