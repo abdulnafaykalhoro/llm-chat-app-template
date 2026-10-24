@@ -105,12 +105,7 @@ export default {
 
     return Response.json(
       {
-        error: "Video model connection is being configured. No credits have been spent."
-      },
-      { status: 503 }
-    );
-  }
- 
+        
   // Nafay AI - Real Pollinations Video Backend
   if (url.pathname === "/api/create-video") {
     if (request.method !== "POST") {
