@@ -1,3 +1,87 @@
+
+/**
+ * LLM Chat Application Template
+ *
+ * A Cloudflare Workers AI chat application.
+ *
+ * @license MIT
+ */
+import { Env, ChatMessage } from "./types";
+
+const MODEL_ID = "@cf/meta/llama-3.1-8b-instruct-fp8";
+
+const SYSTEM_PROMPT =
+  "You are a helpful, friendly assistant. Provide concise and accurate responses.";
+
+export default {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Serve frontend files
+    if (
+      url.pathname === "/" ||
+      !url.pathname.startsWith("/api/")
+    ) {
+      return env.ASSETS.fetch(request);
+    }
+
+    // AI Chat
+    if (url.pathname === "/api/chat") {
+      if (request.method === "POST") {
+        return handleChatRequest(request, env);
+      }
+
+      return new Response(
+        "Method not allowed",
+        { status: 405 }
+      );
+    }
+
+    // Nafay AI Image Generator
+    if (url.pathname === "/api/create-image") {
+      if (request.method !== "POST") {
+        return new Response(
+          "Method not allowed",
+          { status: 405 }
+        );
+      }
+
+      try {
+        const body = await request.json() as {
+          prompt?: string;
+        };
+
+        const prompt = body.prompt?.trim();
+
+        if (!prompt || prompt.length > 2048) {
+          return Response.json(
+            { error: "Enter an image description (max 2048 characters)." },
+            { status: 400 }
+          );
+        }
+
+        const result = await env.AI.run(
+          "@cf/black-forest-labs/flux-1-schnell",
+          { prompt }
+        );
+
+        return Response.json({
+          image: "data:image/jpeg;base64," + result.image
+        });
+
+      } catch (error) {
+        console.error("Image generation failed:", error);
+
+        return Response.json(
+          { error: "Image generation failed or free quota reached." },
+          { status: 500 }
+        );
+      }
+    }
    
   // Nafay AI - Real Pollinations Video Backend
   if (url.pathname === "/api/create-video") {
