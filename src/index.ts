@@ -82,7 +82,35 @@ export default {
       );
     }
   }
-  // Handle 404 for unmatched routes
+ 
+  // Nafay AI - Pollinations Video API
+  if (url.pathname === "/api/create-video") {
+    if (request.method !== "POST") {
+      return Response.json(
+        { error: "Method not allowed" },
+        { status: 405 }
+      );
+    }
+
+    const videoEnv = env as Env & {
+      POLLINATIONS_API_KEY?: string;
+    };
+
+    if (!videoEnv.POLLINATIONS_API_KEY) {
+      return Response.json(
+        { error: "Video API key is missing." },
+        { status: 503 }
+      );
+    }
+
+    return Response.json(
+      {
+        error: "Video model connection is being configured. No credits have been spent."
+      },
+      { status: 503 }
+    );
+  }
+ // Handle 404 for unmatched routes
 		return new Response("Not found", { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;
